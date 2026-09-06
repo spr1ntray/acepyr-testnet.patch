@@ -1,0 +1,3 @@
+eth-account>=0.13.0,<0.14
+curl_cffi>=0.11.0,<0.15
+requests>=2.32.0,<3

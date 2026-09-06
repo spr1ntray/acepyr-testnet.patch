@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "contract_version": "SH-SOFTWARE-0.6/5",
+  "id": "io.sprintray.acepyr-testnet",
+  "name": "Acepyr",
+  "version": "1.2.6",
+  "description": "Входит кошельком, собирает реферальную цепь и ставит тестовые ACEPYR.",
+  "author": "sprintray",
+  "presentation": {
+    "display_name": "Acepyr",
+    "description": "Тестнет Acepyr: вход кошельком, уникальный ник, реферальная цепь и ставки тестовых ACEPYR. Нужны ключ и прокси.",
+    "assets": {
+      "icon": "assets/icon.png",
+      "image": "assets/image.png"
+    }
+  },
+  "catalog": {
+    "sections": ["testnet"]
+  },
+  "compatibility": {
+    "hub": ">=0.6.22",
+    "python": ">=3.12,<3.13",
+    "os": ["darwin", "win32"]
+  },
+  "runtime": {
+    "type": "python",
+    "entrypoint": "plugin.main:run",
+    "protocol": "soft-hub-jsonl/1",
+    "state_model": "externally_reconciled",
+    "requirements": "requirements.txt",
+    "safe_stop": true,
+    "heartbeat_seconds": 15
+  },
+  "permissions": {
+    "secrets": [
+      "evm_private_key",
+      "proxy",
+      "capsolver_api_key"
+    ],
+    "network": [
+      "www.acepyr.com",
+      "api.capsolver.com",
+      "cwwostwvnroucwjnmpak.supabase.co",
+      "local.adspower.net",
+      "local.adspower.com"
+    ],
+    "chains": [],
+    "financial_risk": "none",
+    "browser": false,
+    "local_services": []
+  },
+  "actions": [
+    {
+      "id": "farm",
+      "name": "Прогнать аккаунты",
+      "description": "Входит кошельком, задаёт уникальный ник, собирает реферальную цепь и ставит по стилю аккаунта.",
+      "risk": "external_write",
+      "account_mode": "one_or_more",
+      "permissions": {
+        "secrets": [
+          "evm_private_key",
+          "proxy",
+          "capsolver_api_key"
+        ]
+      },
+      "resources": {
+        "account": ["private_key", "proxy"],
+        "settings": ["capsolver"]
+      },
+      "referral": {
+        "mode": "project_runtime",
+        "parent_required": false,
+        "parent_access": "shared_read",
+        "permissions": {
+          "secrets": []
+        },
+        "resources": {
+          "account": []
+        }
+      },
+      "output": {
+        "mode": "account_table",
+        "title": "Acepyr",
+        "primary_kind": "farm_summary",
+        "columns": [
+          {"key": "username", "title": "Ник", "type": "string"},
+          {"key": "strategy", "title": "Стиль", "type": "string"},
+          {"key": "bets", "title": "Ставок", "type": "integer", "aggregate": "sum"},
+          {"key": "balance", "title": "ACEPYR", "type": "decimal_string", "aggregate": "sum"},
+          {"key": "wallet_linked", "title": "Кошелёк", "type": "boolean"},
+          {"key": "referred", "title": "Реферал", "type": "boolean"}
+        ]
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "account_concurrency": {
+            "type": "integer",
+            "title": "Одновременно",
+            "description": "Сначала цепь строго parent-first. Внутри уровня столько аккаунтов сразу, обычно 5–10.",
+            "default": 5,
+            "minimum": 1,
+            "maximum": 20,
+            "multipleOf": 1,
+            "x-ui": {
+              "group": "Выполнение",
+              "order": 0,
+              "unit": "аккаунтов"
+            }
+          },
+          "bets_from": {
+            "type": "integer",
+            "title": "Ставок за запуск",
+            "description": "Сколько ставок сделает один аккаунт. Точное число случайное внутри диапазона.",
+            "default": 2,
+            "minimum": 1,
+            "maximum": 20,
+            "multipleOf": 1,
+            "x-ui": {
+              "group": "Ставки",
+              "order": 10,
+              "unit": "ставок",
+              "control": "dual_range",
+              "range": {"id": "bets", "role": "from"}
+            }
+          },
+          "bets_to": {
+            "type": "integer",
+            "title": "Ставок за запуск",
+            "description": "Сколько ставок сделает один аккаунт. Точное число случайное внутри диапазона.",
+            "default": 4,
+            "minimum": 1,
+            "maximum": 20,
+            "multipleOf": 1,
+            "x-ui": {
+              "group": "Ставки",
+              "order": 20,
+              "unit": "ставок",
+              "control": "dual_range",
+              "range": {"id": "bets", "role": "to"}
+            }
+          },
+          "bet_from": {
+            "type": "integer",
+            "title": "Сумма ставки",
+            "description": "Сколько тестовых ACEPYR уходит в одну ставку. Если остаток меньше — софт поставит меньше или пропустит.",
+            "default": 10,
+            "minimum": 5,
+            "maximum": 2000,
+            "multipleOf": 5,
+            "x-ui": {
+              "group": "Ставки",
+              "order": 30,
+              "unit": "ACEPYR",
+              "control": "dual_range",
+              "range": {"id": "bet", "role": "from"}
+            }
+          },
+          "bet_to": {
+            "type": "integer",
+            "title": "Сумма ставки",
+            "description": "Сколько тестовых ACEPYR уходит в одну ставку. Если остаток меньше — софт поставит меньше или пропустит.",
+            "default": 100,
+            "minimum": 5,
+            "maximum": 2000,
+            "multipleOf": 5,
+            "x-ui": {
+              "group": "Ставки",
+              "order": 40,
+              "unit": "ACEPYR",
+              "control": "dual_range",
+              "range": {"id": "bet", "role": "to"}
+            }
+          },
+          "pause_from_ms": {
+            "type": "integer",
+            "title": "Пауза",
+            "description": "Пауза между ставками одного аккаунта.",
+            "default": 800,
+            "minimum": 200,
+            "maximum": 8000,
+            "multipleOf": 100,
+            "x-ui": {
+              "group": "Темп",
+              "order": 50,
+              "unit": "мс",
+              "advanced": true,
+              "control": "dual_range",
+              "range": {"id": "pause", "role": "from"}
+            }
+          },
+          "pause_to_ms": {
+            "type": "integer",
+            "title": "Пауза",
+            "description": "Пауза между ставками одного аккаунта.",
+            "default": 2400,
+            "minimum": 200,
+            "maximum": 8000,
+            "multipleOf": 100,
+            "x-ui": {
+              "group": "Темп",
+              "order": 60,
+              "unit": "мс",
+              "advanced": true,
+              "control": "dual_range",
+              "range": {"id": "pause", "role": "to"}
+            }
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "inspect",
+      "name": "Посмотреть кабинет",
+      "description": "Входит кошельком и читает ник, баланс и стиль. Ставок нет.",
+      "risk": "external_write",
+      "account_mode": "one_or_more",
+      "permissions": {
+        "secrets": [
+          "evm_private_key",
+          "proxy",
+          "capsolver_api_key"
+        ]
+      },
+      "resources": {
+        "account": ["private_key", "proxy"],
+        "settings": ["capsolver"]
+      },
+      "output": {
+        "mode": "account_table",
+        "title": "Кабинет Acepyr",
+        "primary_kind": "account_snapshot",
+        "columns": [
+          {"key": "username", "title": "Ник", "type": "string"},
+          {"key": "strategy", "title": "Стиль", "type": "string"},
+          {"key": "balance", "title": "ACEPYR", "type": "decimal_string", "aggregate": "sum"},
+          {"key": "bets", "title": "Позиций", "type": "integer", "aggregate": "sum"},
+          {"key": "wallet_linked", "title": "Кошелёк", "type": "boolean"},
+          {"key": "session", "title": "Сессия", "type": "boolean"}
+        ]
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "account_concurrency": {
+            "type": "integer",
+            "title": "Одновременно",
+            "description": "Сколько кабинетов читать сразу.",
+            "default": 5,
+            "minimum": 1,
+            "maximum": 20,
+            "multipleOf": 1,
+            "x-ui": {
+              "group": "Выполнение",
+              "order": 0,
+              "unit": "аккаунтов"
+            }
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "ui": {
+    "accent": "#B08D57",
+    "monogram": "AP"
+  }
+}
